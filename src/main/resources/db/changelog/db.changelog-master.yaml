@@ -1,0 +1,4 @@
+databaseChangeLog:
+  - include:
+      file: 01.000.000/changelog-07.sql
+      relativeToChangelogFile: true

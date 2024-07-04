@@ -1,0 +1,2 @@
+alter table wallet_transaction
+drop column transaction_type;
