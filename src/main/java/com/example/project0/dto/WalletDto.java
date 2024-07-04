@@ -2,7 +2,6 @@ package com.example.project0.dto;
 
 import lombok.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Data

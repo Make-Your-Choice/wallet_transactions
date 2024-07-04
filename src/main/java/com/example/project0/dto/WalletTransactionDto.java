@@ -1,7 +1,6 @@
 package com.example.project0.dto;
 
 import com.example.project0.TransactionType;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 @Data

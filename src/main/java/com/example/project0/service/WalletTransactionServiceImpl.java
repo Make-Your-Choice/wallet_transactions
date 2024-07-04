@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 @Transactional
@@ -23,6 +22,12 @@ import java.util.Set;
 public class WalletTransactionServiceImpl implements WalletTransactionService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final ModelMapper modelMapper = new ModelMapper();
+
+    /**
+     * Сохранение транзакции
+     * @param walletTransactionDto
+     * @return
+     */
     @Override
     public WalletTransactionDto save(WalletTransactionDto walletTransactionDto) {
         if(walletTransactionDto.getIdWalletTransaction() == null) {
@@ -36,11 +41,18 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         return walletTransactionDto;
     }
 
+    /**
+     * Удаление всех транзакций
+     */
     @Override
     public void deleteAll() {
         walletTransactionRepository.deleteAll();
     }
 
+    /**
+     * Удаление транзакции
+     * @param id
+     */
     @Override
     public void delete(Long id) {
         if(walletTransactionRepository.findById(id).isPresent()) {
@@ -48,6 +60,11 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         }
     }
 
+    /**
+     * Обновление транзакции
+     * @param walletTransactionDto
+     * @return
+     */
     @Override
     public WalletTransactionDto update(WalletTransactionDto walletTransactionDto) {
         Optional<WalletTransactionDto> dto = get(walletTransactionDto.getIdWalletTransaction());
@@ -57,6 +74,10 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         return walletTransactionDto;
     }
 
+    /**
+     * Получение всех транзакций
+     * @return
+     */
     @Override
     public List<WalletTransactionDto> getAll() {
         List<WalletTransaction> walletTransactions = walletTransactionRepository.findAll();
@@ -68,6 +89,11 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         return walletTransactionDtos;
     }
 
+    /**
+     * Получение транзакции
+     * @param id
+     * @return
+     */
     @Override
     public Optional<WalletTransactionDto> get(Long id) {
         Optional<WalletTransaction> walletTransactionEntity = walletTransactionRepository.findById(id);
@@ -79,12 +105,17 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         return Optional.empty();
     }
 
+    /**
+     * Совершение транзакции
+     * @param requestDto
+     * @param walletDto
+     * @return
+     */
     @Override
     public WalletTransactionDto makeTransaction(RequestDto requestDto, WalletDto walletDto) {
         WalletTransactionDto transactionDto = WalletTransactionDto
                 .builder()
                 .idWalletTransaction(new RandomDataGenerator().nextLong(0L, 999L))
-//                .wallet(walletDto)
                 .transactionType(TransactionType.valueOf(requestDto.getTransactionType()))
                 .amount(requestDto.getAmount())
                 .build();

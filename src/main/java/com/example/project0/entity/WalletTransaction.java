@@ -2,9 +2,6 @@ package com.example.project0.entity;
 
 import com.example.project0.TransactionType;
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,7 +24,6 @@ public class WalletTransaction {
     @Column(name = "transaction_type")
     @Enumerated
     private TransactionType transactionType;
-//    @Column(precision = 15, scale = 12, nullable = false)
     @Column(nullable = false)
     private Long amount;
 }

@@ -1,6 +1,5 @@
 package com.example.project0.dto;
 
-import com.example.project0.TransactionType;
 import lombok.*;
 
 @Data
