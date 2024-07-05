@@ -45,6 +45,17 @@ public class WalletController {
         return walletService.getAll();
     }
     /**
+     * Получение счета
+     */
+    @GetMapping(
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            path="/get/{id}"
+    )
+    public WalletDto getOne(@PathVariable Long id) {
+        Optional<WalletDto> dto = walletService.get(id);
+        return dto.orElse(null);
+    }
+    /**
      * Удаление счета
      */
     @DeleteMapping(
