@@ -9,3 +9,6 @@ create table wallet_transaction (
     transaction_type numeric,
     amount numeric
 );
+
+insert into wallet (residue) values
+    (2000), (1500), (1000);

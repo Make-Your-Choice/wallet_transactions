@@ -17,5 +17,5 @@ public interface WalletService {
     List<WalletDto> getAll();
     Optional<WalletDto> get(Long id);
 
-    Optional<WalletDto> makeTransaction(RequestDto requestDto) throws InvalidParameterException;
+    void makeTransaction(RequestDto requestDto);
 }

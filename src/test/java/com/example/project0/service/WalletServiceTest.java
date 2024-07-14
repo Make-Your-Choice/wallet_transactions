@@ -3,7 +3,6 @@ package com.example.project0.service;
 import com.example.project0.dto.RequestDto;
 import com.example.project0.dto.WalletDto;
 import com.example.project0.repository.WalletRepository;
-import com.example.project0.service.WalletServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +18,15 @@ public class WalletServiceTest {
     private WalletServiceImpl walletService;
     @Autowired
     private WalletRepository walletRepository;
+    @Autowired
+    private WalletTransactionServiceImpl walletTransactionService;
 
     /**
      * Инициализация
      */
     @BeforeEach
     public void before() {
-        walletService = new WalletServiceImpl(walletRepository);
+        walletService = new WalletServiceImpl(walletRepository, walletTransactionService);
         walletRepository.deleteAll();
     }
 

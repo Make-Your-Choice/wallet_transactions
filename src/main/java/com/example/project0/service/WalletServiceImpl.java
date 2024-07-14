@@ -6,22 +6,26 @@ import com.example.project0.dto.WalletDto;
 import com.example.project0.entity.Wallet;
 import com.example.project0.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.math3.random.RandomDataGenerator;
-import org.springframework.stereotype.Service;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeMap;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService{
     private final WalletRepository walletRepository;
+    private final WalletTransactionService walletTransactionService;
     private final ModelMapper modelMapper = new ModelMapper();
+    private final TypeMap<Wallet, WalletDto> propertyMapper = modelMapper.createTypeMap(Wallet.class, WalletDto.class);
 
     /**
      * Сохранение счета
@@ -30,15 +34,9 @@ public class WalletServiceImpl implements WalletService{
      */
     @Override
     public WalletDto save(WalletDto walletDto) {
-        if(walletDto.getIdWallet() == null) {
-            walletDto.setIdWallet(new RandomDataGenerator().nextLong(0L, 999L));
-        }
-        if(walletDto.getResidue() == null) {
-            walletDto.setResidue(0L);
-        }
-        if(walletDto.getWalletTransactions() == null) {
-            walletDto.setWalletTransactions(new ArrayList<>());
-        }
+//        propertyMapper.addMappings(
+//                modelMapper -> modelMapper.map(src -> src.getResidue().get(), WalletDto::setResidue)
+//        );
         Wallet entity = modelMapper.map(walletDto, Wallet.class);
 
         walletRepository.save(entity);
@@ -58,6 +56,7 @@ public class WalletServiceImpl implements WalletService{
      * @param id
      */
     @Override
+    @Transactional
     public void delete(Long id) {
         if(walletRepository.findById(id).isPresent()) {
             walletRepository.deleteById(id);
@@ -83,10 +82,14 @@ public class WalletServiceImpl implements WalletService{
      * @return
      */
     @Override
+    @Transactional
     public List<WalletDto> getAll() {
         List<Wallet> wallets = walletRepository.findAll();
         List<WalletDto> walletDtos = new ArrayList<>();
         for(Wallet wallet: wallets) {
+//            propertyMapper.addMappings(
+//                    modelMapper -> modelMapper.map(src -> src.getResidue().get(), WalletDto::setResidue)
+//            );
             WalletDto dto = modelMapper.map(wallet, WalletDto.class);
             walletDtos.add(dto);
         }
@@ -103,6 +106,9 @@ public class WalletServiceImpl implements WalletService{
         Optional<Wallet> walletEntity = walletRepository.findById(id);
         if(walletEntity.isPresent()) {
             Wallet wallet = walletEntity.get();
+//            propertyMapper.addMappings(
+//                    modelMapper -> modelMapper.map(src -> src.getResidue().get(), WalletDto::setResidue)
+//            );
             WalletDto dto = modelMapper.map(wallet, WalletDto.class);
             return Optional.ofNullable(dto);
         }
@@ -116,34 +122,35 @@ public class WalletServiceImpl implements WalletService{
      * @throws InvalidParameterException
      */
     @Override
-    public Optional<WalletDto> makeTransaction(RequestDto requestDto) throws InvalidParameterException {
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void makeTransaction(RequestDto requestDto) throws InvalidParameterException {
         Optional<Wallet> walletEntity = walletRepository.findById(requestDto.getIdWallet());
         if(walletEntity.isPresent()) {
             Wallet wallet = walletEntity.get();
             if(TransactionType.valueOf(requestDto.getTransactionType()) == TransactionType.WITHDRAW) {
                 if(wallet.getResidue() < requestDto.getAmount()) {
-                    //throw new InvalidParameterException();
-                    System.out.println("Insufficient funds");
+                    throw new InvalidParameterException("Insufficient funds");
                 } else {
-                    wallet.setResidue(
-                            wallet.getResidue() - requestDto.getAmount()
-                    );
-                    WalletDto dto = modelMapper.map(wallet, WalletDto.class);
-                    return Optional.ofNullable(dto);
+                    AtomicLong resultResidue = new AtomicLong(wallet.getResidue());
+                    if(resultResidue.compareAndSet(
+                            wallet.getResidue(), wallet.getResidue() - requestDto.getAmount())) {
+                        wallet.setResidue(resultResidue.get());
+                        WalletDto dto = modelMapper.map(wallet, WalletDto.class);
+                        walletTransactionService.makeTransaction(requestDto, dto);
+                    }
                 }
             } else if (TransactionType.valueOf(requestDto.getTransactionType()) == TransactionType.DEPOSIT) {
-                wallet.setResidue(
-                        wallet.getResidue() + requestDto.getAmount()
-                );
-                WalletDto dto = modelMapper.map(wallet, WalletDto.class);
-                return Optional.ofNullable(dto);
-            } else {
-                //throw new InvalidParameterException();
-                System.out.println("Incorrect request format");
+
+                AtomicLong resultResidue = new AtomicLong(wallet.getResidue());
+                if(resultResidue.compareAndSet(
+                        wallet.getResidue(), wallet.getResidue() + requestDto.getAmount())) {
+                    wallet.setResidue(resultResidue.get());
+                    WalletDto dto = modelMapper.map(wallet, WalletDto.class);
+                    walletTransactionService.makeTransaction(requestDto, dto);
+                }
             }
         } else {
-            System.out.println("Wallet does not exist");
+            throw new InvalidParameterException("Wallet does not exist");
         }
-        return Optional.empty();
     }
 }
